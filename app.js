@@ -22,6 +22,7 @@ const branchController = require('./controllers/branchController');
 const dashboardController = require('./controllers/dashboardController');
 const materialController = require('./controllers/materialController');
 const recipeController = require('./controllers/recipeController');
+const productController = require('./controllers/productController');
 
 // 🟢 3. โยน baseUrl เข้า app.locals เพื่อให้ทุกหน้า EJS เอาไปใช้ได้
 app.locals.baseUrl = baseUrl;
@@ -183,6 +184,46 @@ appRouter.post('/api/branches/add', requireAuth, branchController.addBranch);
 appRouter.post('/api/branches/update/:id', requireAuth, branchController.updateBranch);
 appRouter.post('/api/branches/delete/:id', requireAuth, branchController.deleteBranch);
 
+// ==========================================
+// ระบบจัดการสินค้า (Product Management) - ร้านโชห่วย
+// ==========================================
+appRouter.get('/product_list', requireAuth, loadMenus, checkPermission, productController.showProductList);
+appRouter.post('/api/products_data', requireAuth, productController.getProductsData);
+appRouter.post('/api/products/add', requireAuth, productController.addProduct);
+appRouter.get('/api/products/get/:id', requireAuth, productController.getProduct);
+appRouter.post('/api/products/update', requireAuth, productController.updateProduct);
+appRouter.post('/api/products/delete', requireAuth, productController.deleteProduct);
+
+// API สำหรับโหลด Dropdown หมวดหมู่และหน่วยนับ (เรียกจาก Controller)
+appRouter.get('/api/categories', requireAuth, productController.getCategories);
+appRouter.get('/api/units', requireAuth, productController.getUnits);
+
+/*
+// API สำหรับโหลด Dropdown หมวดหมู่และหน่วยนับ
+appRouter.get('/api/categories', requireAuth, async (req, res) => {
+    try {
+        const db = require('./config/dbpg');
+        // แก้ไข: รับผลเต็มๆ แล้วดึง .rows ออกมา
+        const result = await db.query('SELECT id, name FROM categories ORDER BY name');
+        res.json({ status: 'success', data: result.rows });
+    } catch (error) {
+        console.error("Error loading categories:", error);
+        res.json({ status: 'error', message: error.message });
+    }
+});
+
+appRouter.get('/api/units', requireAuth, async (req, res) => {
+    try {
+        const db = require('./config/dbpg');
+        // แก้ไข: รับผลเต็มๆ แล้วดึง .rows ออกมา
+        const result = await db.query('SELECT id, name FROM units ORDER BY name');
+        res.json({ status: 'success', data: result.rows });
+    } catch (error) {
+        console.error("Error loading units:", error);
+        res.json({ status: 'error', message: error.message });
+    }
+});
+*/
 // ระบบจัดการวัตถุดิบ
 /*
 appRouter.get('/material_list', requireAuth, loadMenus, checkPermission, materialController.showMaterialList);

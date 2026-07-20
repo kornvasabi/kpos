@@ -1,0 +1,475 @@
+<%# ============================================================ %>
+<%# PRODUCT LIST PAGE (ระบบจัดการสินค้าร้านโชห่วย)                        %>
+<%# ============================================================ %>
+
+<style>
+    /* ── Search Box Style (สไตล์เดียวกับระบบเดิม) ────────────── */
+    .search-wrapper {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .search-wrapper .input-group .form-control {
+        border-right: 0;
+        border-radius: 0.35rem 0 0 0.35rem;
+    }
+    .search-wrapper .input-group .form-control:focus {
+        box-shadow: none;
+        border-color: #4e73df;
+    }
+    #searchBadge {
+        display: none;
+        font-size: 0.8rem;
+    }
+    #productsTable_processing {
+        background: rgba(255,255,255,0.85);
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        color: #4e73df;
+    }
+</style>
+
+<%- include('./layouts/header') %>
+<%- include('./layouts/sidebar') %>
+
+<div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+
+        <%- include('./layouts/topbar') %>
+
+        <div class="my-custom-scroll">
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">จัดการสินค้า (Products)</h1>
+
+                <%# ── CARD ────────────────────────────────────── %>
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-boxes"></i> รายการสินค้าทั้งหมด
+                        </h6>
+                        <button class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#addProductModal">
+                            <i class="fas fa-plus fa-sm text-white-50"></i> เพิ่มสินค้าใหม่
+                        </button>
+                    </div>
+
+                    <div class="card-body">
+
+                        <%# ── SEARCH BAR ──────────────────────── %>
+                        <div class="search-wrapper">
+                            <div class="row align-items-center">
+                                <div class="col-md-6 col-sm-12">
+                                    <label class="small font-weight-bold text-gray-600 mb-1">
+                                        <i class="fas fa-search fa-sm"></i> ค้นหาสินค้า
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" id="searchKeywordInput" class="form-control form-control-sm" placeholder="พิมพ์ชื่อสินค้า หรือบาร์โค้ด แล้วกด Enter..." autocomplete="off">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary btn-sm" id="btnSearch" type="button">
+                                                <i class="fas fa-search fa-sm"></i> ค้นหา
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" id="btnClear" type="button" title="ล้างการค้นหา">
+                                                <i class="fas fa-times fa-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-sm-12 mt-2 mt-md-0">
+                                    <div class="small text-muted mt-3">
+                                        <span id="searchBadge" class="badge badge-primary mr-2">
+                                            <i class="fas fa-filter fa-sm"></i> กำลังค้นหา: "<span id="searchKeywordDisplay"></span>"
+                                        </span>
+                                        <span id="totalRecord"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <%# ── DATATABLE ───────────────────────── %>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="productsTable" width="100%" cellspacing="0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th width="5%" class="text-center">ID</th>
+                                        <th>ชื่อสินค้า</th>
+                                        <th class="text-center">บาร์โค้ด</th>
+                                        <th class="text-center">หมวดหมู่</th>
+                                        <th class="text-center">หน่วยนับ</th>
+                                        <th class="text-right text-muted">ต้นทุน</th>
+                                        <th class="text-right text-success">ราคาขาย</th>
+                                        <th class="text-center text-warning">จุดสั่งซื้อต่ำสุด</th>
+                                        <th width="15%" class="text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <%- include('./layouts/footer') %>
+
+    </div>
+</div>
+
+<%# ============================================================ %>
+<%# MODALS                                                       %>
+<%# ============================================================ %>
+
+<%# ── 1. MODAL: เพิ่มสินค้า ────────────────────────────────── %>
+<div class="modal fade" id="addProductModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="formAddProduct">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> เพิ่มสินค้าใหม่</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8 form-group">
+                            <label>ชื่อสินค้า <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="เช่น ข้าวสารหอมมะลิ 5 กก., น้ำปลาแท้" required>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>บาร์โค้ด</label>
+                            <input type="text" class="form-control" name="barcode" placeholder="สแกนหรือพิมพ์บาร์โค้ด">
+                        </div>
+                    </div>
+                    <div class="row border p-3 bg-light rounded mb-3">
+                        <div class="col-md-4 form-group">
+                            <label>หมวดหมู่สินค้า</label>
+                            <select class="form-control" name="category_id" id="add_category_id" required>
+                                <option value="">-- เลือกหมวดหมู่ --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>หน่วยนับ <span class="text-danger">*</span></label>
+                            <select class="form-control" name="unit_id" id="add_unit_id" required>
+                                <option value="">-- เลือกหน่วยนับ --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>จุดสั่งซื้อต่ำสุด (Min Stock)</label>
+                            <input type="number" step="1" class="form-control" name="min_stock" value="5" placeholder="เช่น 5">
+                            <small class="text-muted">แจ้งเตือนเมื่อสต็อกต่ำกว่านี้</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="text-muted font-weight-bold">ต้นทุนต่อหน่วย (บาท)</label>
+                            <input type="number" step="0.01" class="form-control" name="cost_price" value="0" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="text-success font-weight-bold">ราคาขายต่อหน่วย (บาท) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control border-success" name="selling_price" value="0" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 form-group">
+                            <label>รายละเอียด/หมายเหตุ</label>
+                            <textarea class="form-control" name="description" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-success">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%# ── 2. MODAL: แก้ไขสินค้า ───────────────────────────────── %>
+<div class="modal fade" id="editProductModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="formEditProduct">
+                <input type="hidden" name="id" id="edit_id">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> แก้ไขสินค้า</h5>
+                    <button class="close" type="button" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8 form-group">
+                            <label>ชื่อสินค้า <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" id="edit_name" required>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>บาร์โค้ด</label>
+                            <input type="text" class="form-control" name="barcode" id="edit_barcode">
+                        </div>
+                    </div>
+                    <div class="row border p-3 bg-light rounded mb-3">
+                        <div class="col-md-4 form-group">
+                            <label>หมวดหมู่สินค้า</label>
+                            <select class="form-control" name="category_id" id="edit_category_id" required>
+                                <option value="">-- เลือกหมวดหมู่ --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>หน่วยนับ <span class="text-danger">*</span></label>
+                            <select class="form-control" name="unit_id" id="edit_unit_id" required>
+                                <option value="">-- เลือกหน่วยนับ --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>จุดสั่งซื้อต่ำสุด (Min Stock)</label>
+                            <input type="number" step="1" class="form-control" name="min_stock" id="edit_min_stock">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="text-muted font-weight-bold">ต้นทุนต่อหน่วย (บาท)</label>
+                            <input type="number" step="0.01" class="form-control" name="cost_price" id="edit_cost_price" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="text-success font-weight-bold">ราคาขายต่อหน่วย (บาท) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control border-success" name="selling_price" id="edit_selling_price" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 form-group">
+                            <label>รายละเอียด/หมายเหตุ</label>
+                            <textarea class="form-control" name="description" id="edit_description" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-warning">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%# ============================================================ %>
+<%# SCRIPTS                                                      %>
+<%# ============================================================ %>
+<script>
+$(document).ready(function () {
+
+    /* ══════════════ โหลดข้อมูล Dropdown หมวดหมู่และหน่วยนับ ══════════════ */
+    function loadDropdowns() {
+        $.ajax({
+            url: '<%= baseUrl %>/api/categories',
+            type: 'GET',
+            success: function (res) {
+                if (res.status === 'success') {
+                    let options = '<option value="">-- เลือกหมวดหมู่ --</option>';
+                    res.data.forEach(cat => {
+                        options += `<option value="${cat.id}">${cat.name}</option>`;
+                    });
+                    $('#add_category_id').html(options);
+                    $('#edit_category_id').html(options);
+                }
+            }
+        });
+
+        $.ajax({
+            url: '<%= baseUrl %>/api/units',
+            type: 'GET',
+            success: function (res) {
+                if (res.status === 'success') {
+                    let options = '<option value="">-- เลือกหน่วยนับ --</option>';
+                    res.data.forEach(unit => {
+                        options += `<option value="${unit.id}">${unit.name}</option>`;
+                    });
+                    $('#add_unit_id').html(options);
+                    $('#edit_unit_id').html(options);
+                }
+            }
+        });
+    }
+
+    loadDropdowns();
+
+    /* ══════════════ DataTable Setup ══════════════ */
+    const table = $('#productsTable').DataTable({
+        processing:  true,
+        serverSide:  true,
+        searching:   true,
+        pageLength:  50,
+        dom: '<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>rt<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+        ajax: {
+            url:  '<%= baseUrl %>/api/products_data',
+            type: 'POST',
+            error: function () {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+            }
+        },
+        columns: [
+            { data: 'id', className: 'text-center' },
+            { data: 'name', className: 'font-weight-bold text-dark' },
+            { data: 'barcode', className: 'text-center' },
+            { data: 'category_name', className: 'text-center' },
+            { data: 'unit_name', className: 'text-center' },
+            {
+                data: 'cost_price',
+                className: 'text-right text-muted',
+                render: d => parseFloat(d || 0).toFixed(2) + ' ฿'
+            },
+            {
+                data: 'selling_price',
+                className: 'text-right text-success font-weight-bold',
+                render: d => parseFloat(d || 0).toFixed(2) + ' ฿'
+            },
+            {
+                data: 'min_stock',
+                className: 'text-center text-warning font-weight-bold',
+                render: d => d ? `<span class="badge badge-warning">${d}</span>` : '-'
+            },
+            {
+                data: 'id',
+                className: 'text-center',
+                orderable: false,
+                render: function (id, type, row) {
+                    let btns = `<button class="btn btn-warning btn-sm btn-edit mb-1" data-id="${id}" title="แก้ไข"><i class="fas fa-edit"></i></button> `;
+                    btns += `<button class="btn btn-danger btn-sm btn-delete mb-1" data-id="${id}" title="ลบ"><i class="fas fa-trash"></i></button>`;
+                    return btns;
+                }
+            }
+        ],
+        drawCallback: function (settings) {
+            const api      = this.api();
+            const filtered = settings.json?.recordsFiltered ?? 0;
+            const total    = settings.json?.recordsTotal    ?? 0;
+            const keyword  = $('#searchKeywordInput').val().trim();
+
+            if (keyword) {
+                $('#searchBadge').show();
+                $('#searchKeywordDisplay').text(keyword);
+                $('#totalRecord').html(`พบ <strong>${filtered}</strong> รายการ จากทั้งหมด ${total}`);
+            } else {
+                $('#searchBadge').hide();
+                $('#totalRecord').html(`ทั้งหมด <strong>${total}</strong> รายการ`);
+            }
+        },
+        language: {
+            processing:  '<i class="fas fa-spinner fa-spin mr-1"></i> กำลังโหลด...',
+            zeroRecords: 'ไม่พบข้อมูลสินค้าที่ค้นหา',
+            emptyTable:  'ยังไม่มีข้อมูลสินค้าในระบบ',
+            paginate:    { first:'«', last:'»', next:'›', previous:'‹' }
+        }
+    });
+
+    /* ══════════════ Search Bar Logic ══════════════ */
+    function doSearch() {
+        table.search($('#searchKeywordInput').val().trim()).draw();
+    }
+    $('#btnSearch').on('click', doSearch);
+    $('#searchKeywordInput').on('keypress', function (e) { if (e.which === 13) doSearch(); });
+    $('#btnClear').on('click', function () {
+        $('#searchKeywordInput').val('');
+        table.search('').draw();
+    });
+
+    /* ══════════════ Add Product ══════════════ */
+    $('#formAddProduct').on('submit', function (e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: '<%= baseUrl %>/api/products/add',
+            data: $(this).serialize(),
+            success: function (res) {
+                if (res.status === 'success') {
+                    $('#addProductModal').modal('hide');
+                    $('#formAddProduct')[0].reset();
+                    Swal.fire('สำเร็จ', res.message, 'success');
+                    table.ajax.reload(null, false);
+                } else {
+                    Swal.fire('ผิดพลาด', res.message, 'warning');
+                }
+            }
+        });
+    });
+
+    /* ══════════════ Load Data to Edit Modal ══════════════ */
+    $('#productsTable').on('click', '.btn-edit', function () {
+        const prodId = $(this).data('id');
+        $.ajax({
+            url: '<%= baseUrl %>/api/products/get/' + prodId,
+            type: 'GET',
+            success: function (res) {
+                if (res.status === 'success') {
+                    const p = res.data;
+                    $('#edit_id').val(p.id);
+                    $('#edit_name').val(p.name);
+                    $('#edit_barcode').val(p.barcode);
+                    $('#edit_category_id').val(p.category_id);
+                    $('#edit_unit_id').val(p.unit_id);
+                    $('#edit_cost_price').val(p.cost_price);
+                    $('#edit_selling_price').val(p.selling_price);
+                    $('#edit_min_stock').val(p.min_stock);
+                    $('#edit_description').val(p.description);
+                    $('#editProductModal').modal('show');
+                } else {
+                    Swal.fire('ผิดพลาด', res.message, 'error');
+                }
+            }
+        });
+    });
+
+    /* ══════════════ Update Product ══════════════ */
+    $('#formEditProduct').on('submit', function (e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: '<%= baseUrl %>/api/products/update',
+            data: $(this).serialize(),
+            success: function (res) {
+                if (res.status === 'success') {
+                    $('#editProductModal').modal('hide');
+                    Swal.fire('สำเร็จ', res.message, 'success');
+                    table.ajax.reload(null, false);
+                } else {
+                    Swal.fire('ผิดพลาด', res.message, 'warning');
+                }
+            }
+        });
+    });
+
+    /* ══════════════ Delete Product ══════════════ */
+    $('#productsTable').on('click', '.btn-delete', function () {
+        const prodId = $(this).data('id');
+        Swal.fire({
+            title: 'ยืนยันการลบ?',
+            text: "หากลบแล้วจะไม่สามารถกู้คืนได้ (ระวังกระทบกับประวัติการขายและสต็อก)",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'ใช่, ลบเลย',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    type: 'POST',
+                    url: '<%= baseUrl %>/api/products/delete',
+                    data: { id: prodId },
+                    success: function (res) {
+                        if (res.status === 'success') {
+                            Swal.fire('ลบสำเร็จ', res.message, 'success');
+                            table.ajax.reload(null, false);
+                        } else {
+                            Swal.fire('ผิดพลาด', res.message, 'warning');
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+});
+</script>

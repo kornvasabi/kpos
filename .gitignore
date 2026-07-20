@@ -1,2 +1,19 @@
 # Configuration files (มีข้อมูลส่วนตัว เช่น API keys, passwords)
 .env
+
+```
+# Dependencies
+node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Editors
+.vscode/
+
+# Environment
+.env
+.env.local
+.env.*
+```
